@@ -30,14 +30,14 @@ func PrintLinesCenter(lines []string, delay int, width int) {
 }
 
 func SplitText(text string, width, procent int) []string { // Spliting text to send in print func
-	lenght := width * procent
+	length := width * procent
 	
 	runes := []rune(text)
-	lines := make([]string, len(text) / lenght + 3)
+	lines := make([]string, len(text) / length + 3)
 
+	var line string
 	for _, value := range runes {
-		var line string
-		if len(line) <= lenght  && value != ' ' {
+		if len(line) <= length  && value != ' ' {
 			line += string(value)
 		} else {
 			lines = append(lines, line)

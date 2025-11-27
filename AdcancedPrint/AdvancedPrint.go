@@ -20,9 +20,11 @@ func PrintLineCenter(line string, delay int, width int) {
 		fmt.Print(" ")
 	}
 	
-	for v := range line {
-		fmt.Print(v)
-		time.Sleep(time.Duration(delay) * time.Millisecond)
+	PrintLine(line, delay)
+}
+
+func PrintLinesCenter(lines []string, delay int, width int) {
+	for _, line := range lines {
+		PrintLineCenter(line, delay, width)
 	}
-	fmt.Print("\n")
 }

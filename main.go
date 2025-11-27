@@ -18,9 +18,9 @@ func main() {
 	if filePath != "" {
 		checkFile(filePath) // Checking file
 		initialization(filePath) // Starting program
+	} else {
+		initialization("") // Starting program without file
 	}
-
-	initialization("") // Starting program without file
 }
 
 func checkFile(path string) {

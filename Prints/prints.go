@@ -2,6 +2,7 @@ package Prints
 
 import (
 	"fmt"
+	"math"
 	"time"
 )
 
@@ -29,8 +30,8 @@ func PrintLinesCenter(lines []string, delay int, width int) {
 	}
 }
 
-func SplitText(text string, width, procent int) []string { // Spliting text to send in print func
-	length := width * procent
+func SplitText(text string, width int, procent float64) []string { // Spliting text to send in print func
+	var length int = int(math.Round(float64(width) * procent))
 	
 	runes := []rune(text)
 	lines := make([]string, len(text) / length + 3)

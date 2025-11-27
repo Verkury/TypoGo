@@ -1,14 +1,15 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"log"
+	"math/rand"
 	"os"
 	_ "sync"
-	"log"
 
 	"github.com/eiannone/keyboard"
 	"golang.org/x/term"
-
 )
 
 
@@ -19,27 +20,32 @@ func Start(text string) {
 func initialization(absPath string) { 
 	if absPath == "" {
 		text := getText()
-		text = splitText(text)
+		Start(text)
 	} else {
 		file, err := os.ReadFile(absPath)
 		if err != nil {
 			fmt.Printf("Ошибка при чтении файла %v\n", err)
 			return
 		}
-		text := splitText(string(file))
-		Start(text)
+		Start(string(file))
 	}
 }
 
 func getText() string { // Parsing text from json
-	
-	return ""
+	data, err := os.ReadFile("Texts.json")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var texts map[string]string
+	err = json.Unmarshal(data, &texts)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return texts[string(rand.Intn(21))]
 }
 
-func splitText(text string) string { // Spliting text to send in print func
-
-	return ""
-}
 
 func getTerminalSize() (int, int){
 	width, height, err := term.GetSize(int(os.Stdout.Fd()))

@@ -7,14 +7,44 @@ import (
 	"math/rand"
 	"os"
 	_ "sync"
+	_ "time"
+
+	. "github.com/Verkury/TypoGo/Prints"
 
 	"github.com/eiannone/keyboard"
 	"golang.org/x/term"
 )
 
 
-func Start(text string) {
 
+func colorirLines(lines []string, userText string) []string {
+	return []string{}
+}
+
+
+func Start(text string) {
+	width, height := getTerminalSize()
+	lines := SplitText(text, width, 0.65)
+	userText := ""
+
+	key := make(chan string)
+
+	go scanKeys(key)
+
+	for {
+		k := <- key
+		if k != "" {
+			userText += k
+		}
+		if (k == "exit") {
+			break
+		}
+		fmt.Println(userText, k)
+
+	}
+
+	_ = lines
+	_ = height
 }
 
 func initialization(absPath string) { 
@@ -65,8 +95,8 @@ func keyToString(key keyboard.Key, char rune) string {
 		return "backspace"
 	case keyboard.KeySpace:
 		return " "
-	case keyboard.KeyEsc:
-		return "esc"
+	case keyboard.KeyEsc, keyboard.KeyCtrlC, keyboard.KeyCtrlD:
+		return "exit"
 	default:
 		if key == 0 && char != 0 {
 			return string(char)
@@ -75,25 +105,24 @@ func keyToString(key keyboard.Key, char rune) string {
 	}
 }
 
-func getKeys(input chan bool, output chan string) { // input - work status, output - keys
+func scanKeys(output chan string) { // input - work status, output - keys
 	if err := keyboard.Open(); err != nil {
 		log.Fatal(err)
 	}
 	defer keyboard.Close()
 
 	for {
-		if (<- input) {
-			char, key, err := keyboard.GetKey()
-			if err != nil {
-				log.Fatal(err)
-			}
+		char, key, err := keyboard.GetKey()
+		if err != nil {
+			log.Fatal(err)
+		}
 
-			keyStr := keyToString(key, char)
+		keyStr := keyToString(key, char)
 
-			if keyStr != "" {
-				output <- keyStr
-			}
-		} else {
+		if keyStr != "" {
+			output <- keyStr
+		}
+		if (keyStr == "exit") {
 			break
 		}
 	}

@@ -56,7 +56,7 @@ func SplitText(text string, width int, procent float64) []string  {
 			}
 		} else {
 			if currentLine != "" {
-				lines = append(lines, currentLine)
+				lines = append(lines, currentLine + " ")
 			}
 			currentLine = word
 		}

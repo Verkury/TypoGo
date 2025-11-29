@@ -4,18 +4,28 @@ import (
 	"fmt"
 	"math"
 	"time"
+	"strings"
+	"regexp"
 )
 
+func visibleLen(s string) int {
+    re := regexp.MustCompile(`\033\[[0-9;]*[a-zA-Z]`)
+    clean := re.ReplaceAllString(s, "")
+    return len(clean)
+}
+
 func PrintLine(line string, delay int) {
-	for v := range line {
-		fmt.Print(v)
-		time.Sleep(time.Duration(delay) * time.Millisecond)
+	for _, v := range line {
+		fmt.Print(string(v))
+		if delay != 0 {
+			time.Sleep(time.Duration(delay) * time.Millisecond)
+		}
 	}
 	fmt.Print("\n")
 }
 
 func PrintLineCenter(line string, delay int, width int) {
-	indent := (width - len(line)) / 2
+	indent := (width - visibleLen(line)) / 2
 
 	for i := 0; i < indent; i++ {
 		fmt.Print(" ")
@@ -30,20 +40,31 @@ func PrintLinesCenter(lines []string, delay int, width int) {
 	}
 }
 
-func SplitText(text string, width int, procent float64) []string { // Spliting text to send in print func
+func SplitText(text string, width int, procent float64) []string  {
 	var length int = int(math.Round(float64(width) * procent))
 	
-	runes := []rune(text)
-	lines := make([]string, len(text) / length + 3)
+	words := strings.Fields(text)
+	var lines []string
+	var currentLine string
 
-	var line string
-	for _, value := range runes {
-		if len(line) <= length  && value != ' ' {
-			line += string(value)
+	for _, word := range words {
+		if len(currentLine)+len(word)+1 <= length {
+			if currentLine != "" {
+				currentLine += " " + word
+			} else {
+				currentLine = word
+			}
 		} else {
-			lines = append(lines, line)
-			line = ""
+			if currentLine != "" {
+				lines = append(lines, currentLine)
+			}
+			currentLine = word
 		}
-	} 
+	}
+	
+	if currentLine != "" {
+		lines = append(lines, currentLine)
+	}
+	
 	return lines
 }

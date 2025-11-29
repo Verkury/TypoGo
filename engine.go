@@ -15,10 +15,39 @@ import (
 	"golang.org/x/term"
 )
 
+const (
+        Reset = "\033[0m"
+        Red   = "\033[31m"
+        Green  = "\033[32m"
+        Blue  = "\033[34m"
+        White = "\033[37m"
+    )
 
 
 func colorirLines(lines []string, userText string) []string {
-	return []string{}
+    coloredLines := make([]string, len(lines))
+    userTextIndex := 0
+    
+    for i, line := range lines {
+        coloredLine := ""
+        
+        for _, char := range line {
+            if userTextIndex < len(userText) {
+                if userText[userTextIndex] == byte(char) {
+                    coloredLine += Green + string(char) + Reset
+                } else {
+                    coloredLine += Red + string(char) + Reset
+                }
+                userTextIndex++
+            } else {
+                coloredLine += string(char)
+            }
+        }
+        
+        coloredLines[i] = coloredLine
+    }
+    
+    return coloredLines
 }
 
 
@@ -32,18 +61,22 @@ func Start(text string) {
 	go scanKeys(key)
 
 	for {
+		clear()
+		ColorirLines := colorirLines(lines, userText)
+		PrintLinesCenter(ColorirLines, 0, width)
+		fmt.Print("\n\n")
+		PrintLineCenter(userText, 0, width)
 		k := <- key
-		if k != "" {
+		if (k == "backspace") {
+			userText = userText[:len(userText)-1]
+			continue
+		} else if k != ""  {
 			userText += k
 		}
 		if (k == "exit") {
 			break
 		}
-		fmt.Println(userText, k)
-
 	}
-
-	_ = lines
 	_ = height
 }
 
@@ -105,7 +138,7 @@ func keyToString(key keyboard.Key, char rune) string {
 	}
 }
 
-func scanKeys(output chan string) { // input - work status, output - keys
+func scanKeys(output chan string) { // output - keys
 	if err := keyboard.Open(); err != nil {
 		log.Fatal(err)
 	}

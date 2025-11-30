@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"strings"
 	_ "sync"
 	_ "time"
 
@@ -23,6 +24,10 @@ const (
         White = "\033[37m"
     )
 
+
+func clear() {
+	fmt.Print("\033c")
+}
 
 func colorirLines(lines []string, userText string) []string {
     coloredLines := make([]string, len(lines))
@@ -50,50 +55,6 @@ func colorirLines(lines []string, userText string) []string {
     return coloredLines
 }
 
-
-func Start(text string) {
-	width, height := getTerminalSize()
-	lines := SplitText(text, width, 0.65)
-	userText := ""
-
-	key := make(chan string)
-
-	go scanKeys(key)
-
-	for {
-		clear()
-		ColorirLines := colorirLines(lines, userText)
-		PrintLinesCenter(ColorirLines, 0, width)
-		fmt.Print("\n\n")
-		PrintLineCenter(userText, 0, width)
-		k := <- key
-		if (k == "backspace") {
-			userText = userText[:len(userText)-1]
-			continue
-		} else if k != ""  {
-			userText += k
-		}
-		if (k == "exit") {
-			break
-		}
-	}
-	_ = height
-}
-
-func initialization(absPath string) { 
-	if absPath == "" {
-		text := getText()
-		Start(text)
-	} else {
-		file, err := os.ReadFile(absPath)
-		if err != nil {
-			fmt.Printf("Ошибка при чтении файла %v\n", err)
-			return
-		}
-		Start(string(file))
-	}
-}
-
 func getText() string { // Parsing text from json
 	data, err := os.ReadFile("Texts.json")
 	if err != nil {
@@ -105,21 +66,9 @@ func getText() string { // Parsing text from json
 	if err != nil {
 		log.Fatal(err)
 	}
+	key := fmt.Sprintf("%d", rand.Intn(21))
 
-	return texts[string(rand.Intn(21))]
-}
-
-
-func getTerminalSize() (int, int){
-	width, height, err := term.GetSize(int(os.Stdout.Fd()))
-	if err != nil {
-		return 80, 14
-	}
-	return width, height
-}
-
-func clear() {
-	fmt.Print("\033c")
+	return texts[key]
 }
 
 func keyToString(key keyboard.Key, char rune) string {
@@ -158,5 +107,148 @@ func scanKeys(output chan string) { // output - keys
 		if (keyStr == "exit") {
 			break
 		}
+	}
+}
+
+func makeKeyboard(currentKey string) []string {
+    keys := [][]string{
+        {"[~] ", "[1] ", "[2] ", "[3] ", "[4] ", "[5] ", "[6] ", "[7] ", "[8] ", "[9] ", "[0] ", "[-] ", "[=] ", "[<-- ]"},
+        {"[Tab] ", "[q] ", "[w] ", "[e] ", "[r] ", "[t] ", "[y] ", "[u] ", "[i] ", "[o] ", "[p] ", "[{] ", "[}] ", "[\\ ]"},
+        {"[Caps] ", "[a] ", "[s] ", "[d] ", "[f] ", "[g] ", "[h] ", "[j] ", "[k] ", "[l] ", "[;] ", "['] ", "[Enter]"},
+        {"[Shift] ", "[z] ", "[x] ", "[c] ", "[v] ", "[b] ", "[n] ", "[m] ", "[,] ", "[.] ", "[/] ", "[  Shift ]"},
+        {"[Ctrl] ", "[Win] ", "[Alt] ", "[    Space   ] ", "[Alt] ", "[Fn] ", "[Menu] ", "[Ctrl]"},
+    }
+
+    keysForFind := [][]string{
+        {"`", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "=", "backspace"},
+        {"tab", "q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "[", "]", "\\"},
+        {"caps", "a", "s", "d", "f", "g", "h", "j", "k", "l", ";", "'", "enter"},
+        {"shift", "z", "x", "c", "v", "b", "n", "m", ",", ".", "/", "shift"},
+        {"ctrl", "win", "alt", " ", "alt", "fn", "menu", "ctrl"},
+    }
+
+    keysForFindCaps := [][]string{
+        {"`", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "=", "backspace"},
+        {"tab", "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "[", "]", "\\"},
+        {"caps", "A", "S", "D", "F", "G", "H", "J", "K", "L", ":", "\"", "enter"},
+        {"shift", "Z", "X", "C", "V", "B", "N", "M", ",", ".", "/", "shift"},
+        {"ctrl", "win", "alt", " ", "alt", "fn", "menu", "ctrl"},
+    }
+
+	keybrd := make([]string, 5)
+	shift := false
+	for i := 0; i < len(keys); i++ {
+        line := ""
+        for j := 0; j < len(keys[i]); j++ {
+            found := false
+
+            if shift && keysForFind[i][j] == "shift" {
+				line += Blue + keys[i][j] + Reset
+				shift = false
+				continue
+			}
+
+            if j < len(keysForFind[i]) && currentKey == keysForFind[i][j] {
+                line += Blue + keys[i][j] + Reset
+                found = true
+            }
+            
+            if !found && j < len(keysForFindCaps[i]) && currentKey == keysForFindCaps[i][j] {
+                line += Blue + keys[i][j] + Reset
+                found = true
+				shift = true
+            }
+            
+            if !found && i == 0 && j == 13 && currentKey == "backspace" {
+                line += Red + keys[i][j] + Reset
+                found = true
+            }
+            
+            if !found {
+                line += White + keys[i][j] + Reset
+            }
+        }
+        keybrd = append(keybrd, line)
+    }
+    
+    return keybrd
+}
+
+func deliteEnters(text string) string {
+	return strings.ReplaceAll(text, "\n", " ")
+}
+
+func getTerminalSize() (int, int){
+	width, height, err := term.GetSize(int(os.Stdout.Fd()))
+	if err != nil {
+		return 80, 14
+	}
+	return width, height
+}
+
+func finish(width int) {
+	clear()
+	fmt.Print("\n\n")
+	PrintLineCenter("Thanks for palying!", 56, width)
+}
+
+func intro() {
+
+}
+
+
+func Start(text string) {
+	width, height := getTerminalSize()
+	lines := SplitText(text, width, 0.65)
+	userText := ""
+
+	key := make(chan string)
+
+	go scanKeys(key)
+
+	for {
+		clear()
+		ColorirLines := colorirLines(lines, userText)
+		PrintLinesCenter(ColorirLines, 0, width)
+		fmt.Print("\n")
+		splitedUserText := SplitText(userText + "|", width, 0.65)
+		PrintLinesCenter(splitedUserText, 0, width)
+		if len(userText) != len(deliteEnters(text)) {
+			if strings.HasPrefix(deliteEnters(text), userText) {
+				PrintLinesCenter(makeKeyboard(string(text[len(userText)])), 0, width)
+			} else {
+				PrintLinesCenter(makeKeyboard("backspace"), 0, width)
+			}
+		} else {
+			finish(width)
+			break
+		}
+		k := <- key
+		if (k == "backspace") {
+			if len(userText) != 0 {
+				userText = userText[:len(userText)-1]
+			}
+			continue
+		} else if k != ""  {
+			userText += k
+		}
+		if (k == "exit") {
+			break
+		}
+	}
+	_ = height
+}
+
+func initialization(absPath string) { 
+	if absPath == "" {
+		text := getText()
+		Start(text)
+	} else {
+		file, err := os.ReadFile(absPath)
+		if err != nil {
+			fmt.Printf("Ошибка при чтении файла %v\n", err)
+			return
+		}
+		Start(string(file))
 	}
 }
